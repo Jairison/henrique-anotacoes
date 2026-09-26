@@ -137,11 +137,14 @@ serviceForm.addEventListener('submit', (e) => {
 function render() {
   const term = search.value.trim().toLowerCase();
 
-  const visible = clients.filter(
-    (c) =>
-      (filter === 'todos' || c.status === filter) &&
-      c.name.toLowerCase().includes(term)
-  );
+  // clientes em atendimento ficam no topo da lista
+  const visible = clients
+    .filter(
+      (c) =>
+        (filter === 'todos' || c.status === filter) &&
+        c.name.toLowerCase().includes(term)
+    )
+    .sort((a, b) => (b.status === 'aberto') - (a.status === 'aberto'));
 
   list.innerHTML = '';
   visible.forEach((c) => {
@@ -155,6 +158,13 @@ function render() {
     name.className = 'item-name';
     name.textContent = c.name;
 
+    if (c.status === 'aberto') {
+      const tag = document.createElement('span');
+      tag.className = 'open-tag';
+      tag.textContent = 'Em aberto';
+      name.append(tag);
+    }
+
     const date = document.createElement('div');
     date.className = 'item-date';
     date.textContent = [c.service, formatDate(c.date)].filter(Boolean).join(' · ');
@@ -165,11 +175,26 @@ function render() {
     amount.className = 'item-value';
     amount.textContent = brl.format(c.value || 0);
 
-    const badge = document.createElement('button');
-    badge.className = `badge ${c.status}`;
-    badge.textContent = c.status;
-    badge.title = 'Clique para alternar pago/pendente';
-    badge.addEventListener('click', () => toggle(c.id));
+    let action;
+    if (c.status === 'aberto') {
+      // atendimento em andamento: finalizar como pago ou pendente
+      action = document.createElement('div');
+      action.className = 'finish';
+      ['pago', 'pendente'].forEach((status) => {
+        const btn = document.createElement('button');
+        btn.className = `badge ${status}`;
+        btn.textContent = status;
+        btn.title = `Finalizar atendimento como ${status}`;
+        btn.addEventListener('click', () => finish(c.id, status));
+        action.append(btn);
+      });
+    } else {
+      action = document.createElement('button');
+      action.className = `badge ${c.status}`;
+      action.textContent = c.status;
+      action.title = 'Clique para alternar pago/pendente';
+      action.addEventListener('click', () => toggle(c.id));
+    }
 
     const del = document.createElement('button');
     del.className = 'btn-del';
@@ -178,7 +203,7 @@ function render() {
     del.setAttribute('aria-label', `Remover ${c.name}`);
     del.addEventListener('click', () => remove(c.id));
 
-    li.append(info, amount, badge, del);
+    li.append(info, amount, action, del);
     list.appendChild(li);
   });
 
@@ -191,6 +216,7 @@ function render() {
     clients.filter((c) => c.status === status).reduce((t, c) => t + (c.value || 0), 0);
 
   document.getElementById('stat-total').textContent = clients.length;
+  document.getElementById('stat-open').textContent = clients.filter((c) => c.status === 'aberto').length;
   document.getElementById('stat-paid').textContent = clients.filter((c) => c.status === 'pago').length;
   document.getElementById('stat-pending').textContent = clients.filter((c) => c.status === 'pendente').length;
   document.getElementById('stat-received').textContent = brl.format(sum('pago'));
@@ -214,6 +240,14 @@ function toggle(id) {
   const c = clients.find((c) => c.id === id);
   if (!c) return;
   c.status = c.status === 'pago' ? 'pendente' : 'pago';
+  save();
+  render();
+}
+
+function finish(id, status) {
+  const c = clients.find((c) => c.id === id);
+  if (!c) return;
+  c.status = status;
   save();
   render();
 }
