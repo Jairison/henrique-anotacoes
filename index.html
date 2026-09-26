@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Henrique Anotações</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+
+    <header class="header">
+      <img class="logo" src="img/logo.png" alt="Barbearia do Henrique">
+      <div>
+        <p class="eyebrow">Barbearia Henr</p>
+        <h1>Henrique <span>Anotações</span></h1>
+      </div>
+    </header>
+
+    <section class="stats" aria-label="Resumo">
+      <div class="stat">
+        <span class="stat-label">Clientes</span>
+        <strong id="stat-total">0</strong>
+      </div>
+      <div class="stat stat-paid">
+        <span class="stat-label">Pagos</span>
+        <strong id="stat-paid">0</strong>
+      </div>
+      <div class="stat stat-pending">
+        <span class="stat-label">Pendentes</span>
+        <strong id="stat-pending">0</strong>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Novo atendimento</h2>
+      <form id="form" autocomplete="off">
+        <div class="field">
+          <label for="name">Nome do cliente</label>
+          <input id="name" type="text" placeholder="Ex.: João Silva" maxlength="60" required>
+        </div>
+
+        <div class="field">
+          <span class="label">Pagamento</span>
+          <div class="segmented" role="radiogroup" aria-label="Status do pagamento">
+            <input type="radio" name="status" id="st-paid" value="pago" checked>
+            <label for="st-paid">Pago</label>
+            <input type="radio" name="status" id="st-pending" value="pendente">
+            <label for="st-pending">Pendente</label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary">Adicionar cliente</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="list-head">
+        <h2 class="card-title">Clientes</h2>
+        <div class="filters" role="tablist" aria-label="Filtrar">
+          <button class="chip active" data-filter="todos">Todos</button>
+          <button class="chip" data-filter="pago">Pagos</button>
+          <button class="chip" data-filter="pendente">Pendentes</button>
+        </div>
+      </div>
+
+      <input id="search" class="search" type="search" placeholder="Buscar cliente…">
+
+      <ul id="list" class="list"></ul>
+      <p id="empty" class="empty" hidden>Nenhum cliente por aqui ainda.</p>
+    </section>
+
+    <footer class="footer">Henrique Anotações · feito com capricho</footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
