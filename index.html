@@ -11,7 +11,67 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
+  <!-- Tela de acesso -->
+  <div id="auth" class="auth" hidden>
+    <div class="auth-box">
+      <img class="auth-logo" src="img/logo.png" alt="Barbearia do Henrique">
+      <p class="eyebrow">Área do administrador</p>
+      <h1>Henrique <span>Anotações</span></h1>
+
+      <div class="card auth-card">
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="login" role="tab">Entrar</button>
+          <button type="button" class="tab" data-tab="register" role="tab">Criar conta</button>
+        </div>
+
+        <form id="login-form" autocomplete="on">
+          <div class="field">
+            <label for="login-email">E-mail</label>
+            <input id="login-email" type="email" placeholder="voce@exemplo.com" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label for="login-password">Senha</label>
+            <input id="login-password" type="password" placeholder="Sua senha" autocomplete="current-password" required>
+          </div>
+          <label class="check">
+            <input id="login-remember" type="checkbox" checked>
+            <span>Manter conectado neste computador</span>
+          </label>
+          <p id="login-error" class="form-error" role="alert" hidden></p>
+          <button type="submit" class="btn-primary">Entrar</button>
+        </form>
+
+        <form id="register-form" autocomplete="on" hidden>
+          <div class="field">
+            <label for="reg-name">Seu nome</label>
+            <input id="reg-name" type="text" placeholder="Ex.: Henrique" maxlength="40" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="reg-email">E-mail</label>
+            <input id="reg-email" type="email" placeholder="voce@exemplo.com" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label for="reg-password">Senha</label>
+            <input id="reg-password" type="password" placeholder="Mínimo de 6 caracteres" minlength="6" autocomplete="new-password" required>
+          </div>
+          <div class="field">
+            <label for="reg-confirm">Confirmar senha</label>
+            <input id="reg-confirm" type="password" placeholder="Repita a senha" minlength="6" autocomplete="new-password" required>
+          </div>
+          <p id="register-error" class="form-error" role="alert" hidden></p>
+          <button type="submit" class="btn-primary">Criar conta</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sistema (só aparece depois do login) -->
+  <div class="container" id="app" hidden>
+
+    <div class="user-bar">
+      <span>Olá, <strong id="user-name"></strong></span>
+      <button type="button" id="logout" class="btn-link">Sair</button>
+    </div>
 
     <header class="header">
       <img class="logo" src="img/logo.png" alt="Barbearia do Henrique">
@@ -41,6 +101,7 @@
       <div class="stat stat-wide stat-paid">
         <span class="stat-label">Recebido</span>
         <strong id="stat-received">R$ 0,00</strong>
+        <small id="stat-received-detail" class="stat-detail"></small>
       </div>
       <div class="stat stat-wide stat-pending">
         <span class="stat-label">A receber</span>
@@ -81,6 +142,16 @@
             <label for="st-paid">Pago</label>
             <input type="radio" name="status" id="st-pending" value="pendente">
             <label for="st-pending">Pendente</label>
+          </div>
+        </div>
+
+        <div class="field" id="method-field" hidden>
+          <span class="label">Forma de pagamento</span>
+          <div class="segmented segmented-2" role="radiogroup" aria-label="Forma de pagamento">
+            <input type="radio" name="paymethod" id="m-cash" value="dinheiro" checked>
+            <label for="m-cash">Dinheiro</label>
+            <input type="radio" name="paymethod" id="m-card" value="cartao">
+            <label for="m-card">Cartão</label>
           </div>
         </div>
 
@@ -136,5 +207,6 @@
   </div>
 
   <script src="app.js"></script>
+  <script src="auth.js"></script>
 </body>
 </html>

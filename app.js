@@ -30,10 +30,14 @@ const calGrid = document.getElementById('cal-grid');
 const calInfo = document.getElementById('cal-info');
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-const CAL_HINT = 'Clique em um dia para ver só os atendimentos dele.';
+// para incluir outra forma (ex.: Pix), basta acrescentar aqui: pix: 'Pix'
+const PAYMENT_METHODS = { dinheiro: 'Dinheiro', cartao: 'Cartão' };
+const STATUS_LABELS = { aberto: 'Em aberto', pago: 'Pago', pendente: 'Pendente' };
+const CAL_HINT ='Clique em um dia para ver só os atendimentos dele.';
 
-let clients = load(STORAGE_KEY, []);
-let services = load(SERVICES_KEY, DEFAULT_SERVICES);
+let currentUser = null; // definido pelo login (auth.js)
+let clients = [];
+let services = [];
 let filter = 'todos';
 let selectedDay = null; // 'AAAA-MM-DD' ou null (todos os dias)
 let viewMonth = startOfMonth(new Date());
@@ -46,12 +50,46 @@ function load(key, fallback) {
   }
 }
 
+// cada administrador tem seus próprios clientes e serviços
+function keyFor(userId, name) {
+  return `${STORAGE_KEY}:${userId}:${name}`;
+}
+
 function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+  localStorage.setItem(keyFor(currentUser.id, 'clientes'), JSON.stringify(clients));
 }
 
 function saveServices() {
-  localStorage.setItem(SERVICES_KEY, JSON.stringify(services));
+  localStorage.setItem(keyFor(currentUser.id, 'servicos'), JSON.stringify(services));
+}
+
+// chamado pelo auth.js depois do login
+function startApp(user) {
+  currentUser = user;
+  clients = load(keyFor(user.id, 'clientes'), []);
+  services = load(keyFor(user.id, 'servicos'), DEFAULT_SERVICES.map((s) => ({ ...s })));
+
+  filter = 'todos';
+  selectedDay = null;
+  viewMonth = startOfMonth(new Date());
+  search.value = '';
+  chips.forEach((c) => c.classList.toggle('active', c.dataset.filter === 'todos'));
+  form.reset();
+  syncMethodField();
+  serviceForm.reset();
+
+  document.getElementById('user-name').textContent = user.name;
+  setToday();
+  renderServices();
+  render();
+}
+
+// chamado pelo auth.js ao sair
+function stopApp() {
+  currentUser = null;
+  clients = [];
+  services = [];
+  list.innerHTML = '';
 }
 
 function newId() {
@@ -88,7 +126,8 @@ function setToday() {
 /* ---------- Calendário ---------- */
 
 function renderCalendar() {
-  calTitle.textContent = viewMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const monthLabel = viewMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  calTitle.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
   const counts = {};
   clients.forEach((c) => {
@@ -274,16 +313,20 @@ function render() {
     name.className = 'item-name';
     name.textContent = c.name;
 
-    if (c.status === 'aberto') {
-      const tag = document.createElement('span');
-      tag.className = 'open-tag';
-      tag.textContent = 'Em aberto';
-      name.append(tag);
-    }
+    const tag = document.createElement('span');
+    tag.className = `status-tag ${c.status}`;
+    tag.textContent = STATUS_LABELS[c.status] || c.status;
+    name.append(tag);
 
     const date = document.createElement('div');
     date.className = 'item-date';
-    date.textContent = [c.service, formatDate(c.date)].filter(Boolean).join(' · ');
+    date.textContent = [
+      c.service,
+      formatDate(c.date),
+      c.status === 'pago' && !c.method ? 'forma de pagamento não informada' : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
 
     info.append(name, date);
 
@@ -291,26 +334,29 @@ function render() {
     amount.className = 'item-value';
     amount.textContent = brl.format(c.value || 0);
 
-    let action;
-    if (c.status === 'aberto') {
-      // atendimento em andamento: finalizar como pago ou pendente
-      action = document.createElement('div');
-      action.className = 'finish';
-      ['pago', 'pendente'].forEach((status) => {
-        const btn = document.createElement('button');
-        btn.className = `badge ${status}`;
-        btn.textContent = status;
-        btn.title = `Finalizar atendimento como ${status}`;
-        btn.addEventListener('click', () => finish(c.id, status));
-        action.append(btn);
-      });
-    } else {
-      action = document.createElement('button');
-      action.className = `badge ${c.status}`;
-      action.textContent = c.status;
-      action.title = 'Clique para alternar pago/pendente';
-      action.addEventListener('click', () => toggle(c.id));
-    }
+    // Dinheiro / Cartão = pago naquela forma; Pendente = ainda não pagou.
+    // Em atendimento (aberto) nenhum aparece marcado; depois de decidido, o escolhido fica em destaque.
+    const action = document.createElement('div');
+    action.className = c.status === 'aberto' ? 'finish' : 'finish decided';
+    const options = [
+      ...Object.entries(PAYMENT_METHODS).map(([method, label]) => ({
+        label,
+        status: 'pago',
+        method,
+        title: `Pago em ${label.toLowerCase()}`,
+        active: c.status === 'pago' && c.method === method,
+      })),
+      { label: 'Pendente', status: 'pendente', title: 'Marcar como pendente', active: c.status === 'pendente' },
+    ];
+    options.forEach((o) => {
+      const btn = document.createElement('button');
+      btn.className = `badge ${o.status}${o.active ? ' active' : ''}`;
+      btn.textContent = o.label;
+      btn.title = o.title;
+      btn.setAttribute('aria-pressed', o.active);
+      btn.addEventListener('click', () => setStatus(c.id, o.status, o.method));
+      action.append(btn);
+    });
 
     const del = document.createElement('button');
     del.className = 'btn-del';
@@ -319,7 +365,7 @@ function render() {
     del.setAttribute('aria-label', `Remover ${c.name}`);
     del.addEventListener('click', () => remove(c.id));
 
-    li.append(info, amount, action, del);
+    li.append(info, amount, del, action);
     list.appendChild(li);
   });
 
@@ -330,42 +376,43 @@ function render() {
 
   renderCalendar();
 
-  const sum = (status) =>
-    clients.filter((c) => c.status === status).reduce((t, c) => t + (c.value || 0), 0);
+  const sum = (status, method) =>
+    clients
+      .filter((c) => c.status === status && (method === undefined || c.method === method))
+      .reduce((t, c) => t + (c.value || 0), 0);
+
+  // detalhe do recebido por forma de pagamento (inclui os antigos sem forma informada)
+  const received = sum('pago');
+  const detail = Object.entries(PAYMENT_METHODS).map(
+    ([method, label]) => `${label} ${brl.format(sum('pago', method))}`
+  );
+  const unknown = received - Object.keys(PAYMENT_METHODS).reduce((t, m) => t + sum('pago', m), 0);
+  if (unknown > 0.005) detail.push(`Sem forma informada ${brl.format(unknown)}`);
+  document.getElementById('stat-received-detail').textContent = detail.join(' · ');
 
   document.getElementById('stat-total').textContent = clients.length;
   document.getElementById('stat-open').textContent = clients.filter((c) => c.status === 'aberto').length;
   document.getElementById('stat-paid').textContent = clients.filter((c) => c.status === 'pago').length;
   document.getElementById('stat-pending').textContent = clients.filter((c) => c.status === 'pendente').length;
-  document.getElementById('stat-received').textContent = brl.format(sum('pago'));
+  document.getElementById('stat-received').textContent = brl.format(received);
   document.getElementById('stat-owed').textContent = brl.format(sum('pendente'));
 }
 
-function add(name, service, value, status, date) {
-  clients.unshift({
-    id: newId(),
-    name,
-    service,
-    value,
-    status,
-    date,
-  });
+function add(name, service, value, status, method, date) {
+  const client = { id: newId(), name, service, value, status, date };
+  if (status === 'pago') client.method = method;
+  clients.unshift(client);
   save();
   render();
 }
 
-function toggle(id) {
-  const c = clients.find((c) => c.id === id);
-  if (!c) return;
-  c.status = c.status === 'pago' ? 'pendente' : 'pago';
-  save();
-  render();
-}
-
-function finish(id, status) {
+// a forma de pagamento só existe quando o cliente está pago
+function setStatus(id, status, method) {
   const c = clients.find((c) => c.id === id);
   if (!c) return;
   c.status = status;
+  if (status === 'pago') c.method = method;
+  else delete c.method;
   save();
   render();
 }
@@ -385,8 +432,9 @@ form.addEventListener('submit', (e) => {
   const value = parseFloat(valueInput.value);
   const when = new Date(`${dateInput.value}T12:00`); // só o dia importa; meio-dia evita erro de fuso
   if (!name || !service || Number.isNaN(value) || value < 0 || Number.isNaN(when.getTime())) return;
-  add(name, service.name, value, form.status.value, when.toISOString());
+  add(name, service.name, value, form.status.value, form.paymethod.value, when.toISOString());
   form.reset();
+  syncMethodField();
   serviceSelect.value = '';
   setToday();
   // mostra no calendário o mês do atendimento recém-anotado
@@ -395,6 +443,13 @@ form.addEventListener('submit', (e) => {
   render();
   nameInput.focus();
 });
+
+// a forma de pagamento só é perguntada quando o status é "Pago"
+function syncMethodField() {
+  document.getElementById('method-field').hidden = form.status.value !== 'pago';
+}
+
+form.querySelectorAll('input[name="status"]').forEach((r) => r.addEventListener('change', syncMethodField));
 
 search.addEventListener('input', render);
 
@@ -407,6 +462,3 @@ chips.forEach((chip) =>
   })
 );
 
-setToday();
-renderServices();
-render();

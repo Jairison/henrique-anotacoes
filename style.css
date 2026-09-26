@@ -16,6 +16,8 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+[hidden] { display: none !important; }
+
 body {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text);
@@ -98,6 +100,13 @@ h1 span { color: var(--gold); font-style: italic; }
   font-weight: 600;
 }
 
+.stat-detail {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .stat-open strong { color: var(--open); }
 .stat-paid strong { color: var(--paid); }
 .stat-pending strong { color: var(--pending); }
@@ -136,6 +145,8 @@ input[type="text"],
 input[type="search"],
 input[type="number"],
 input[type="date"],
+input[type="email"],
+input[type="password"],
 select {
   color-scheme: dark;
   width: 100%;
@@ -155,6 +166,8 @@ input[type="text"]:focus,
 input[type="search"]:focus,
 input[type="number"]:focus,
 input[type="date"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
 select:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(201, 168, 106, 0.15);
@@ -196,6 +209,8 @@ select option { background: var(--card); color: var(--text); }
 #st-open:checked + label { background: rgba(111, 177, 224, 0.16); color: var(--open); }
 #st-paid:checked + label { background: rgba(95, 191, 143, 0.16); color: var(--paid); }
 #st-pending:checked + label { background: rgba(224, 164, 88, 0.16); color: var(--pending); }
+.segmented-2 { grid-template-columns: 1fr 1fr; }
+.segmented input[name="paymethod"]:checked + label { background: rgba(201, 168, 106, 0.16); color: var(--gold-2); }
 .segmented input:focus-visible + label { outline: 2px solid var(--gold); }
 
 .btn-primary {
@@ -246,9 +261,10 @@ select option { background: var(--card); color: var(--text); }
 .list { list-style: none; display: grid; gap: 10px; }
 
 .item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   background: var(--bg-2);
   border: 1px solid var(--border);
   border-left: 3px solid var(--pending);
@@ -263,15 +279,14 @@ select option { background: var(--card); color: var(--text); }
   background: linear-gradient(90deg, rgba(111, 177, 224, 0.08), var(--bg-2) 60%);
 }
 
-.open-tag {
+.status-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   margin-left: 10px;
   padding: 2px 9px;
-  border: 1px solid rgba(111, 177, 224, 0.5);
+  border: 1px solid;
   border-radius: 999px;
-  color: var(--open);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -279,7 +294,11 @@ select option { background: var(--card); color: var(--text); }
   vertical-align: middle;
 }
 
-.open-tag::before {
+.status-tag.aberto { color: var(--open); border-color: rgba(111, 177, 224, 0.5); }
+.status-tag.pago { color: var(--paid); border-color: rgba(95, 191, 143, 0.5); }
+.status-tag.pendente { color: var(--pending); border-color: rgba(224, 164, 88, 0.5); }
+
+.status-tag.aberto::before {
   content: '';
   width: 6px;
   height: 6px;
@@ -293,14 +312,18 @@ select option { background: var(--card); color: var(--text); }
   50% { opacity: 0.6; box-shadow: 0 0 0 5px rgba(111, 177, 224, 0); }
 }
 
-.finish { display: flex; gap: 6px; }
+.finish { display: flex; flex-wrap: wrap; gap: 6px; grid-column: 1 / -1; }
+
+/* depois de decidido, só a opção escolhida fica em destaque */
+.finish.decided .badge:not(.active) { opacity: 0.4; }
+.finish.decided .badge:not(.active):hover { opacity: 1; }
 
 @keyframes in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
 
-.item-info { flex: 1; min-width: 0; }
+.item-info { min-width: 0; }
 
 .item-name {
   font-weight: 500;
@@ -319,6 +342,91 @@ select option { background: var(--card); color: var(--text); }
   white-space: nowrap;
 }
 
+/* Barra do usuário */
+.user-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.user-bar strong { color: var(--gold-2); font-weight: 500; }
+
+/* Tela de acesso */
+.auth {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+}
+
+.auth-box { width: 100%; max-width: 420px; text-align: center; }
+
+.auth-logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 0 5px rgba(201, 168, 106, 0.1), 0 12px 32px rgba(0, 0, 0, 0.55);
+  margin-bottom: 18px;
+}
+
+.auth-box h1 { margin-bottom: 22px; }
+
+.auth-card { text-align: left; margin-bottom: 0; }
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  padding: 10px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tab.active { background: rgba(201, 168, 106, 0.16); color: var(--gold-2); }
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.check input { accent-color: var(--gold); width: 16px; height: 16px; }
+
+.form-error {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(217, 101, 91, 0.5);
+  border-radius: 10px;
+  background: rgba(217, 101, 91, 0.1);
+  color: #f0a39b;
+  font-size: 13px;
+}
+
 /* Calendário */
 .cal-head {
   display: flex;
@@ -327,7 +435,7 @@ select option { background: var(--card); color: var(--text); }
   margin-bottom: 12px;
 }
 
-.cal-head .card-title { margin: 0; text-transform: capitalize; }
+.cal-head .card-title { margin: 0; }
 
 .cal-nav {
   width: 36px;
@@ -473,17 +581,19 @@ select option { background: var(--card); color: var(--text); }
   font: inherit;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 5px 12px;
+  padding: 5px 10px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s;
 }
 
 .badge.pago { color: var(--paid); border-color: rgba(95, 191, 143, 0.5); }
 .badge.pendente { color: var(--pending); border-color: rgba(224, 164, 88, 0.5); }
 .badge.pago:hover { background: rgba(95, 191, 143, 0.12); }
 .badge.pendente:hover { background: rgba(224, 164, 88, 0.12); }
+.badge.pago.active { background: rgba(95, 191, 143, 0.22); border-color: var(--paid); }
+.badge.pendente.active { background: rgba(224, 164, 88, 0.22); border-color: var(--pending); }
 
 .btn-del {
   background: none;
@@ -517,9 +627,6 @@ select option { background: var(--card); color: var(--text); }
   .row { grid-template-columns: 1fr; }
   .cal-day { font-size: 13px; border-radius: 8px; }
   .cal-count { right: 2px; bottom: 2px; }
-  .item { flex-wrap: wrap; }
-  .item-info { flex-basis: 100%; }
-  .item-value { margin-right: auto; }
   .service-form { grid-template-columns: 1fr 100px; }
   .service-form .btn-secondary { grid-column: span 2; padding: 11px; }
 }
