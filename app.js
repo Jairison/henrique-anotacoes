@@ -30,8 +30,8 @@ const calGrid = document.getElementById('cal-grid');
 const calInfo = document.getElementById('cal-info');
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-// para incluir outra forma (ex.: Pix), basta acrescentar aqui: pix: 'Pix'
-const PAYMENT_METHODS = { dinheiro: 'Dinheiro', cartao: 'Cartão' };
+// para incluir outra forma de pagamento, acrescente aqui e um botão no formulário (index.html)
+const PAYMENT_METHODS = { dinheiro: 'Dinheiro', cartao: 'Cartão', pix: 'Pix' };
 const STATUS_LABELS = { aberto: 'Em aberto', pago: 'Pago', pendente: 'Pendente' };
 const CAL_HINT ='Clique em um dia para ver só os atendimentos dele.';
 
