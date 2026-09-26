@@ -24,11 +24,19 @@ const serviceName = document.getElementById('service-name');
 const servicePrice = document.getElementById('service-price');
 const servicesList = document.getElementById('services-list');
 
+const dateInput = document.getElementById('date');
+const calTitle = document.getElementById('cal-title');
+const calGrid = document.getElementById('cal-grid');
+const calInfo = document.getElementById('cal-info');
+
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const CAL_HINT = 'Clique em um dia para ver só os atendimentos dele.';
 
 let clients = load(STORAGE_KEY, []);
 let services = load(SERVICES_KEY, DEFAULT_SERVICES);
 let filter = 'todos';
+let selectedDay = null; // 'AAAA-MM-DD' ou null (todos os dias)
+let viewMonth = startOfMonth(new Date());
 
 function load(key, fallback) {
   try {
@@ -57,6 +65,106 @@ function formatDate(iso) {
     year: 'numeric',
   });
 }
+
+function pad(n) {
+  return String(n).padStart(2, '0');
+}
+
+// chave local do dia, ex.: '2026-09-26'
+function dayKey(input) {
+  const d = new Date(input);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function startOfMonth(d) {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+// preenche a data do formulário com o dia de hoje
+function setToday() {
+  dateInput.value = dayKey(new Date());
+}
+
+/* ---------- Calendário ---------- */
+
+function renderCalendar() {
+  calTitle.textContent = viewMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+  const counts = {};
+  clients.forEach((c) => {
+    const k = dayKey(c.date);
+    counts[k] = (counts[k] || 0) + 1;
+  });
+
+  const todayKey = dayKey(new Date());
+  const year = viewMonth.getFullYear();
+  const month = viewMonth.getMonth();
+  const offset = new Date(year, month, 1).getDay(); // 0 = domingo
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  calGrid.innerHTML = '';
+  for (let i = 0; i < offset; i++) {
+    calGrid.appendChild(document.createElement('span'));
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = `${year}-${pad(month + 1)}-${pad(day)}`;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cal-day';
+    if (key === todayKey) btn.classList.add('today');
+    if (key === selectedDay) btn.classList.add('selected');
+    if (counts[key]) btn.classList.add('has');
+    btn.textContent = day;
+    btn.setAttribute('aria-pressed', key === selectedDay);
+    btn.title = counts[key]
+      ? `${counts[key]} atendimento${counts[key] > 1 ? 's' : ''}`
+      : 'Sem atendimentos';
+
+    if (counts[key]) {
+      const badge = document.createElement('span');
+      badge.className = 'cal-count';
+      badge.textContent = counts[key];
+      btn.append(badge);
+    }
+
+    btn.addEventListener('click', () => selectDay(key));
+    calGrid.appendChild(btn);
+  }
+
+  if (selectedDay) {
+    const [y, m, d] = selectedDay.split('-').map(Number);
+    const label = new Date(y, m - 1, d).toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+    const n = counts[selectedDay] || 0;
+    calInfo.textContent = `${label} · ${n} atendimento${n === 1 ? '' : 's'} — clique de novo para ver todos`;
+  } else {
+    calInfo.textContent = CAL_HINT;
+  }
+}
+
+function selectDay(key) {
+  selectedDay = selectedDay === key ? null : key;
+  if (selectedDay) dateInput.value = selectedDay; // novo atendimento já usa o dia escolhido
+  render();
+}
+
+function shiftMonth(delta) {
+  viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + delta, 1);
+  renderCalendar();
+}
+
+document.getElementById('cal-prev').addEventListener('click', () => shiftMonth(-1));
+document.getElementById('cal-next').addEventListener('click', () => shiftMonth(1));
+document.getElementById('cal-today').addEventListener('click', () => {
+  viewMonth = startOfMonth(new Date());
+  selectedDay = dayKey(new Date());
+  dateInput.value = selectedDay;
+  render();
+});
 
 /* ---------- Serviços ---------- */
 
@@ -137,14 +245,22 @@ serviceForm.addEventListener('submit', (e) => {
 function render() {
   const term = search.value.trim().toLowerCase();
 
-  // clientes em atendimento ficam no topo da lista
+  // clientes em atendimento ficam no topo; depois, por data
+  // (dia escolhido: do mais cedo ao mais tarde; senão: do mais recente ao mais antigo)
   const visible = clients
     .filter(
       (c) =>
         (filter === 'todos' || c.status === filter) &&
+        (!selectedDay || dayKey(c.date) === selectedDay) &&
         c.name.toLowerCase().includes(term)
     )
-    .sort((a, b) => (b.status === 'aberto') - (a.status === 'aberto'));
+    .sort(
+      (a, b) =>
+        (b.status === 'aberto') - (a.status === 'aberto') ||
+        (selectedDay
+          ? new Date(a.date) - new Date(b.date)
+          : new Date(b.date) - new Date(a.date))
+    );
 
   list.innerHTML = '';
   visible.forEach((c) => {
@@ -212,6 +328,8 @@ function render() {
     ? 'Nenhum resultado encontrado.'
     : 'Nenhum cliente por aqui ainda.';
 
+  renderCalendar();
+
   const sum = (status) =>
     clients.filter((c) => c.status === status).reduce((t, c) => t + (c.value || 0), 0);
 
@@ -223,14 +341,14 @@ function render() {
   document.getElementById('stat-owed').textContent = brl.format(sum('pendente'));
 }
 
-function add(name, service, value, status) {
+function add(name, service, value, status, date) {
   clients.unshift({
     id: newId(),
     name,
     service,
     value,
     status,
-    date: new Date().toISOString(),
+    date,
   });
   save();
   render();
@@ -265,10 +383,16 @@ form.addEventListener('submit', (e) => {
   const name = nameInput.value.trim();
   const service = services.find((s) => s.id === serviceSelect.value);
   const value = parseFloat(valueInput.value);
-  if (!name || !service || Number.isNaN(value) || value < 0) return;
-  add(name, service.name, value, form.status.value);
+  const when = new Date(`${dateInput.value}T12:00`); // só o dia importa; meio-dia evita erro de fuso
+  if (!name || !service || Number.isNaN(value) || value < 0 || Number.isNaN(when.getTime())) return;
+  add(name, service.name, value, form.status.value, when.toISOString());
   form.reset();
   serviceSelect.value = '';
+  setToday();
+  // mostra no calendário o mês do atendimento recém-anotado
+  viewMonth = startOfMonth(when);
+  if (selectedDay) selectedDay = dayKey(when); // evita esconder o atendimento que acabou de entrar
+  render();
   nameInput.focus();
 });
 
@@ -283,5 +407,6 @@ chips.forEach((chip) =>
   })
 );
 
+setToday();
 renderServices();
 render();

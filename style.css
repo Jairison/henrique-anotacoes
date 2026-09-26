@@ -135,7 +135,9 @@ label, .label {
 input[type="text"],
 input[type="search"],
 input[type="number"],
+input[type="date"],
 select {
+  color-scheme: dark;
   width: 100%;
   background: var(--bg-2);
   border: 1px solid var(--border);
@@ -152,6 +154,7 @@ input::placeholder { color: #57554f; }
 input[type="text"]:focus,
 input[type="search"]:focus,
 input[type="number"]:focus,
+input[type="date"]:focus,
 select:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(201, 168, 106, 0.15);
@@ -316,6 +319,103 @@ select option { background: var(--card); color: var(--text); }
   white-space: nowrap;
 }
 
+/* Calendário */
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cal-head .card-title { margin: 0; text-transform: capitalize; }
+
+.cal-nav {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--gold-2);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.cal-nav:hover { border-color: var(--gold); background: rgba(201, 168, 106, 0.1); }
+
+.cal-weekdays,
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-weekdays {
+  margin-bottom: 6px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cal-day {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--bg-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.cal-day:hover { border-color: var(--gold); }
+.cal-day.today { border-color: rgba(201, 168, 106, 0.55); color: var(--gold-2); font-weight: 600; }
+.cal-day.selected { background: linear-gradient(135deg, var(--gold-2), var(--gold)); border-color: var(--gold-2); color: #1a1408; font-weight: 600; }
+
+.cal-count {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  min-width: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(201, 168, 106, 0.22);
+  color: var(--gold-2);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+}
+
+.cal-day.selected .cal-count { background: rgba(26, 20, 8, 0.25); color: #1a1408; }
+
+.cal-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.cal-info { font-size: 13px; color: var(--muted); }
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--gold-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-link:hover { text-decoration: underline; }
+
 /* Serviços e valores */
 .services summary {
   cursor: pointer;
@@ -415,6 +515,8 @@ select option { background: var(--card); color: var(--text); }
   .stat { grid-column: span 6; }
   .segmented label { padding: 10px 4px; font-size: 12px; letter-spacing: 0.04em; }
   .row { grid-template-columns: 1fr; }
+  .cal-day { font-size: 13px; border-radius: 8px; }
+  .cal-count { right: 2px; bottom: 2px; }
   .item { flex-wrap: wrap; }
   .item-info { flex-basis: 100%; }
   .item-value { margin-right: auto; }
