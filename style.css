@@ -68,10 +68,13 @@ h1 span { color: var(--gold); font-style: italic; }
 /* Resumo */
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
   margin-bottom: 20px;
 }
+
+.stat { grid-column: span 2; }
+.stat-wide { grid-column: span 3; }
 
 .stat {
   background: var(--card);
@@ -128,7 +131,9 @@ label, .label {
 }
 
 input[type="text"],
-input[type="search"] {
+input[type="search"],
+input[type="number"],
+select {
   width: 100%;
   background: var(--bg-2);
   border: 1px solid var(--border);
@@ -143,9 +148,20 @@ input[type="search"] {
 input::placeholder { color: #57554f; }
 
 input[type="text"]:focus,
-input[type="search"]:focus {
+input[type="search"]:focus,
+input[type="number"]:focus,
+select:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(201, 168, 106, 0.15);
+}
+
+select { cursor: pointer; }
+select option { background: var(--card); color: var(--text); }
+
+.row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 12px;
 }
 
 /* Seletor Pago / Pendente */
@@ -253,6 +269,64 @@ input[type="search"]:focus {
 
 .item-date { font-size: 12px; color: var(--muted); }
 
+.item-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--gold-2);
+  white-space: nowrap;
+}
+
+/* Serviços e valores */
+.services summary {
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.services summary::-webkit-details-marker { display: none; }
+.services summary::after { content: '+'; color: var(--gold); font-size: 26px; line-height: 1; }
+.services[open] summary::after { content: '−'; }
+.services[open] summary { margin-bottom: 12px; }
+
+.hint { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+
+.services-list { list-style: none; display: grid; gap: 8px; margin-bottom: 16px; }
+
+.service-row {
+  display: grid;
+  grid-template-columns: 1fr 110px auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.service-row input { padding: 9px 12px; }
+
+.service-form {
+  display: grid;
+  grid-template-columns: 1fr 110px auto;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-secondary {
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--gold-2);
+  font: inherit;
+  font-weight: 600;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover { background: rgba(201, 168, 106, 0.12); }
+
 .badge {
   border: 1px solid;
   border-radius: 999px;
@@ -299,4 +373,10 @@ input[type="search"]:focus {
 @media (max-width: 480px) {
   h1 { font-size: 30px; }
   .stat strong { font-size: 28px; }
+  .row { grid-template-columns: 1fr; }
+  .item { flex-wrap: wrap; }
+  .item-info { flex-basis: 100%; }
+  .item-value { margin-right: auto; }
+  .service-form { grid-template-columns: 1fr 100px; }
+  .service-form .btn-secondary { grid-column: span 2; padding: 11px; }
 }

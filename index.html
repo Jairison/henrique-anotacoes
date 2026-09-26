@@ -34,6 +34,14 @@
         <span class="stat-label">Pendentes</span>
         <strong id="stat-pending">0</strong>
       </div>
+      <div class="stat stat-wide stat-paid">
+        <span class="stat-label">Recebido</span>
+        <strong id="stat-received">R$ 0,00</strong>
+      </div>
+      <div class="stat stat-wide stat-pending">
+        <span class="stat-label">A receber</span>
+        <strong id="stat-owed">R$ 0,00</strong>
+      </div>
     </section>
 
     <section class="card">
@@ -42,6 +50,17 @@
         <div class="field">
           <label for="name">Nome do cliente</label>
           <input id="name" type="text" placeholder="Ex.: João Silva" maxlength="60" required>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="service">Serviço</label>
+            <select id="service" required></select>
+          </div>
+          <div class="field">
+            <label for="value">Valor (R$)</label>
+            <input id="value" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" required>
+          </div>
         </div>
 
         <div class="field">
@@ -57,6 +76,17 @@
         <button type="submit" class="btn-primary">Adicionar cliente</button>
       </form>
     </section>
+
+    <details class="card services">
+      <summary class="card-title">Serviços e valores</summary>
+      <p class="hint">Cadastre sua tabela de preços. Ao escolher o serviço, o valor é preenchido sozinho (e ainda pode ser ajustado).</p>
+      <ul id="services-list" class="services-list"></ul>
+      <form id="service-form" class="service-form" autocomplete="off">
+        <input id="service-name" type="text" placeholder="Novo serviço" maxlength="40" required>
+        <input id="service-price" type="number" min="0" step="0.01" placeholder="R$ 0,00" inputmode="decimal" required>
+        <button type="submit" class="btn-secondary">Adicionar</button>
+      </form>
+    </details>
 
     <section class="card">
       <div class="list-head">
